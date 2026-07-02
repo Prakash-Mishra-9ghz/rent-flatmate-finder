@@ -1,0 +1,132 @@
+// Prisma schema for Rent & Flatmate Finder
+// Run `npx prisma migrate dev` after setting DATABASE_URL in .env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  TENANT
+  OWNER
+  ADMIN
+}
+
+enum InterestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum RoomType {
+  PRIVATE_ROOM
+  SHARED_ROOM
+  ENTIRE_FLAT
+}
+
+enum FurnishingStatus {
+  FURNISHED
+  SEMI_FURNISHED
+  UNFURNISHED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  role          Role
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Owner side
+  listings      Listing[]        @relation("OwnerListings")
+
+  // Tenant side
+  tenantProfile TenantProfile?
+  interestsSent Interest[]       @relation("TenantInterests")
+
+  messages      Message[]        @relation("SenderMessages")
+}
+
+model TenantProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredLocation String
+  budgetMin         Int
+  budgetMax         Int
+  moveInDate        DateTime
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Listing {
+  id               String            @id @default(cuid())
+  ownerId          String
+  owner            User              @relation("OwnerListings", fields: [ownerId], references: [id], onDelete: Cascade)
+  location         String
+  rent             Int
+  availableFrom    DateTime
+  roomType         RoomType
+  furnishingStatus FurnishingStatus
+  photos           String[]          @default([])
+  description      String?
+  isFilled         Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  interests        Interest[]
+  compatibilities  Compatibility[]
+}
+
+// Cached AI (or fallback rule-based) compatibility score per tenant-listing pair.
+// Computed once and reused; not recomputed on every request.
+model Compatibility {
+  id          String   @id @default(cuid())
+  tenantId    String
+  listingId   String
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  score       Int
+  explanation String
+  source      String   // "LLM" or "RULE_BASED_FALLBACK"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, listingId])
+  @@index([listingId])
+}
+
+model Interest {
+  id          String         @id @default(cuid())
+  tenantId    String
+  tenant      User           @relation("TenantInterests", fields: [tenantId], references: [id], onDelete: Cascade)
+  listingId   String
+  listing     Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  status      InterestStatus @default(PENDING)
+  score       Int?           // snapshot of compatibility score at time of interest
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  messages    Message[]
+
+  @@unique([tenantId, listingId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  interestId String
+  interest   Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     User     @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([interestId, createdAt])
+}
