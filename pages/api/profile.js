@@ -1,7 +1,7 @@
 const prisma = require("../../lib/db");
 const { requireAuth } = require("../../lib/auth");
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const auth = requireAuth(req, res, ["TENANT"]);
   if (!auth) return;
 

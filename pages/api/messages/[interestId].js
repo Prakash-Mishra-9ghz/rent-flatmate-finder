@@ -1,7 +1,7 @@
-const prisma = require("../../lib/db");
-const { requireAuth } = require("../../lib/auth");
+const prisma = require("../../../lib/db");
+const { requireAuth } = require("../../../lib/auth");
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
   const auth = requireAuth(req, res);
