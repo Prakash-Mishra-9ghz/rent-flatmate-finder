@@ -1,11 +1,11 @@
-const prisma = require("../../lib/db");
-const { requireAuth } = require("../../lib/auth");
-const { computeCompatibility } = require("../../lib/llm");
-const { notifyOwnerHighCompatibilityInterest } = require("../../lib/email");
+const prisma = require("../../../lib/db");
+const { requireAuth } = require("../../../lib/auth");
+const { computeCompatibility } = require("../../../lib/llm");
+const { notifyOwnerHighCompatibilityInterest } = require("../../../lib/email");
 
 const HIGH_COMPATIBILITY_THRESHOLD = Number(process.env.HIGH_COMPATIBILITY_THRESHOLD || 80);
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method === "POST") return createInterest(req, res);
   if (req.method === "GET") return listInterests(req, res);
   return res.status(405).json({ error: "Method not allowed" });

@@ -1,8 +1,8 @@
-const prisma = require("../../lib/db");
-const { requireAuth } = require("../../lib/auth");
-const { computeCompatibility } = require("../../lib/llm");
+const prisma = require("../../../lib/db");
+const { requireAuth } = require("../../../lib/auth");
+const { computeCompatibility } = require("../../../lib/llm");
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const { id } = req.query;
 
   if (req.method === "GET") return getListing(req, res, id);

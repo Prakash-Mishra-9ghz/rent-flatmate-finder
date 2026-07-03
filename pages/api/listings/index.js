@@ -1,8 +1,8 @@
-const prisma = require("../../lib/db");
-const { requireAuth } = require("../../lib/auth");
-const { computeCompatibility } = require("../../lib/llm");
+const prisma = require("../../../lib/db");
+const { requireAuth } = require("../../../lib/auth");
+const { computeCompatibility } = require("../../../lib/llm");
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method === "POST") return createListing(req, res);
   if (req.method === "GET") return listListings(req, res);
   return res.status(405).json({ error: "Method not allowed" });
